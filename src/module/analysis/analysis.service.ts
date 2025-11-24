@@ -2,27 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DeepSeekService } from '../ai/deepseek.service';
 import { PromptTemplate } from './prompt.template';
 
-// 行级评论接口
-export interface LineComment {
-  path: string;
-  line: number;
-  comment: string;
-  severity: 'error' | 'warning' | 'info';
-}
-
-// DeepSeek API 返回的 JSON 结构
-interface DeepSeekAnalysisResponse {
-  analysisReport: string; // 改为字符串，包含完整的代码审查结果
-  lineComments: LineComment[];
-}
-
-// 最终返回的分析结果
-export interface AnalysisResult {
-  analysisReport: string; // 改为字符串
-  lineComments: LineComment[];
-  rawResponse: string;
-}
-
 @Injectable()
 export class AnalysisService {
   private readonly logger = new Logger(AnalysisService.name);

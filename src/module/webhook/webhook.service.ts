@@ -28,6 +28,12 @@ export class WebhookService {
     for (const commit of parsed.commits) {
       const analysicResult = await this.analysisService.analyzeCommit(commit);
       sendMdMessage('AI 分析', analysicResult.analysisReport);
+
+      await this.githubWebhookService.postComment({
+        repository: parsed.repository,
+        commit,
+        analysisResult: analysicResult,
+      });
     }
   }
 }

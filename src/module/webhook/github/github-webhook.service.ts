@@ -106,4 +106,37 @@ export class GithubWebhookService {
       pusher: payload.pusher,
     };
   }
+
+  async postComment({
+    repository,
+    commit,
+    analysisResult,
+  }: {
+    repository: RepositoryInfo;
+    commit: CommitInfo;
+    analysisResult: AnalysisResult;
+  }) {
+    const [owner, repo] = repository.fullName.split('/');
+
+    await Promise.all(
+      analysisResult.lineComments?.map(async (comment) => {
+        await this.octokit.repos.createCommitComment({
+          owner,
+          repo,
+          commit_sha: commit.sha,
+          body: `**${comment.severity.toUpperCase()}:** ${comment.comment}`,
+          path: comment.path,
+          line: comment.line,
+        });
+      }),
+    );
+
+    const response = await this.octokit.repos.createCommitComment({
+      owner,
+      repo,
+      commit_sha: commit.sha,
+      body: analysisResult.analysisReport,
+    });
+    return response.data;
+  }
 }
