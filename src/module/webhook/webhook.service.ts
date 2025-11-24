@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { GithubWebhookService } from './github/github-webhook.service';
 import { sendMdMessage } from '../../utils/message';
 import { AnalysisService } from '../analysis/analysis.service';
+import { GitlabWebhookService } from './gitlab/gitlab-webhook.service';
 
 @Injectable()
 export class WebhookService {
@@ -9,10 +10,13 @@ export class WebhookService {
   constructor(
     private readonly githubWebhookService: GithubWebhookService,
     private readonly analysisService: AnalysisService,
+    private readonly gitlabWebhookService: GitlabWebhookService,
   ) {}
 
   async handlePushEvent(payload: any, platform: 'github' | 'gitlab') {
     this.logger.log(`Received ${platform} push event`, payload);
+
+    sendMdMessage('gitlab push event', JSON.stringify(payload));
 
     // 解析事件
     const parsed =
