@@ -45,6 +45,7 @@ export class GithubWebhookService {
 
     const commits: CommitInfo[] = await Promise.all(
       (payload.commits || []).map(async (commit) => {
+        // 获取 commit 详情
         const response = await this.octokit.repos.getCommit({
           owner,
           repo,
@@ -53,11 +54,10 @@ export class GithubWebhookService {
 
         const commitData = response.data;
 
-        this.logger.log(response.data);
-
         const diffParts: string[] = [];
         const files: FileChange[] = [];
 
+        // 处理文件变化
         commitData.files.forEach((file) => {
           files.push({
             filename: file.filename,

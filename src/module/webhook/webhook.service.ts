@@ -1,10 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GithubWebhookService } from './github/github-webhook.service';
+import { sendMessage } from 'src/utils/message';
+import { AnalysisService } from '../analysis/analysis.service';
 
 @Injectable()
 export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
-  constructor(private readonly githubWebhookService: GithubWebhookService) {}
+  constructor(
+    private readonly githubWebhookService: GithubWebhookService,
+    private readonly analysisService: AnalysisService,
+  ) {}
 
   async handlePushEvent(payload: any, platform: 'github' | 'gitlab') {
     this.logger.log(`Received ${platform} push event`, payload);
@@ -13,8 +18,18 @@ export class WebhookService {
     const parsed =
       platform === 'github'
         ? await this.githubWebhookService.parsePushEvent(payload)
-        : {};
+        : null;
 
-    this.logger.log('Parsed event:', parsed);
+    if (!parsed) {
+      this.logger.warn(`Unsupported platform: ${platform}`);
+      return;
+    }
+
+    sendMessage(JSON.stringify(parsed));
+
+    for (const commit of parsed.commits) {
+      const analysicResult = await this.analysisService.analyzeCommit(commit);
+      sendMessage(JSON.stringify(analysicResult));
+    }
   }
 }
