@@ -3,8 +3,11 @@ import { DeepSeekService } from '../ai/deepseek.service';
 import { PromptTemplate } from './prompt.template';
 
 export interface AnalysisResult {
+  // 代码复杂度分析
   complexity: string;
+  // 可行性评估
   feasibility: string;
+  // 安全性检查
   security: string;
   overall: string;
   rawResponse: string;

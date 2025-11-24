@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GithubWebhookService } from './github/github-webhook.service';
-import { sendMessage } from 'src/utils/message';
+import { sendMdMessage } from 'src/utils/message';
 import { AnalysisService } from '../analysis/analysis.service';
 
 @Injectable()
@@ -25,11 +25,9 @@ export class WebhookService {
       return;
     }
 
-    sendMessage(JSON.stringify(parsed));
-
     for (const commit of parsed.commits) {
       const analysicResult = await this.analysisService.analyzeCommit(commit);
-      sendMessage(JSON.stringify(analysicResult));
+      sendMdMessage('AI 分析', analysicResult.rawResponse);
     }
   }
 }

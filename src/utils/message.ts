@@ -35,6 +35,37 @@ const getMessageData = (
   };
 };
 
+export async function sendMdMessage(title: string, message: string) {
+  await fetch(resportUrl, {
+    method: 'POST',
+    body: JSON.stringify({
+      msg_type: 'interactive',
+      card: {
+        config: {
+          wide_screen_mode: true,
+          enable_forward: true,
+        },
+        header: {
+          template: 'green',
+          title: {
+            content: title,
+            tag: 'plain_text',
+          },
+        },
+        elements: [
+          {
+            tag: 'markdown',
+            content: message,
+          },
+        ],
+      },
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+}
+
 export async function sendMessage(message: string) {
   await fetch(resportUrl, {
     method: 'POST',
