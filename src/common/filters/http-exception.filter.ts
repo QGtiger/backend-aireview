@@ -16,7 +16,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
         ? (exception.getResponse() as any)
         : exception;
 
-    const code = exception.getStatus?.() || (exception as any).code || 500;
+    // 优先使用 status，如果不存在再使用 code（兼容旧代码）
+    const code =
+      exception.getStatus?.() ||
+      (exception as any).status ||
+      (exception as any).code ||
+      500;
 
     const errorResponse = {
       success: false,
