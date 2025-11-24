@@ -6,13 +6,13 @@ export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
   constructor(private readonly githubWebhookService: GithubWebhookService) {}
 
-  handlePushEvent(payload: any, platform: 'github' | 'gitlab') {
+  async handlePushEvent(payload: any, platform: 'github' | 'gitlab') {
     this.logger.log(`Received ${platform} push event`, payload);
 
     // 解析事件
     const parsed =
       platform === 'github'
-        ? this.githubWebhookService.parsePushEvent(payload)
+        ? await this.githubWebhookService.parsePushEvent(payload)
         : {};
   }
 }

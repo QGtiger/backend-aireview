@@ -7,12 +7,14 @@ import {
 } from '@nestjs/common';
 import { GithubWebhookService } from './github-webhook.service';
 import { ConfigService } from '@nestjs/config';
+import { WebhookService } from '../webhook.service';
 
 @Controller('webhook/github')
 export class GithubWebhookController {
   constructor(
     private readonly githubWebhookService: GithubWebhookService,
     private readonly configService: ConfigService,
+    private readonly webhookService: WebhookService,
   ) {}
 
   @Post()
@@ -35,5 +37,9 @@ export class GithubWebhookController {
 
     const event = headers['x-github-event'];
     console.log(event);
+
+    if (event === 'push') {
+      await this.webhookService.handlePushEvent(body, 'github');
+    }
   }
 }
