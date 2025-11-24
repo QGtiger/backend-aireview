@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GithubWebhookService } from './github/github-webhook.service';
-import { sendMdMessage } from 'src/utils/message';
+import { sendMdMessage } from '../../utils/message';
 import { AnalysisService } from '../analysis/analysis.service';
 
 @Injectable()

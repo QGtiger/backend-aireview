@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'crypto';
 import { Octokit } from '@octokit/rest';
-import { isCodeFile } from 'src/utils';
+import { isCodeFile } from '../../../utils';
 
 @Injectable()
 export class GithubWebhookService {
