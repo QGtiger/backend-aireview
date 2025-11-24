@@ -20,7 +20,14 @@ interface CommitInfo {
 
 interface FileChange {
   filename: string;
-  status: 'added' | 'modified' | 'removed' | 'renamed';
+  status:
+    | 'added'
+    | 'modified'
+    | 'removed'
+    | 'renamed'
+    | 'copied'
+    | 'changed'
+    | 'unchanged';
   additions: number;
   deletions: number;
   patch?: string;

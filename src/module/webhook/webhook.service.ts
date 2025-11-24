@@ -14,5 +14,7 @@ export class WebhookService {
       platform === 'github'
         ? await this.githubWebhookService.parsePushEvent(payload)
         : {};
+
+    this.logger.log('Parsed event:', parsed);
   }
 }
