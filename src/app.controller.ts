@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 import { sendMessage } from './utils/message';
 
@@ -12,7 +12,16 @@ export class AppController {
   }
 
   @Post('message')
-  async sendMessage(@Body() body: any) {
-    await sendMessage(JSON.stringify(body, null, 2));
+  async sendMessage(@Body() body: any, @Headers() headers: any) {
+    await sendMessage(
+      JSON.stringify(
+        {
+          body,
+          headers,
+        },
+        null,
+        2,
+      ),
+    );
   }
 }
