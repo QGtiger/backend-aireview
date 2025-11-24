@@ -19,8 +19,6 @@ export class GithubWebhookController {
 
   @Post()
   async handleWebhook(@Body() body: any, @Headers() headers: any) {
-    console.log(body, headers);
-
     const webhookSecret = this.configService.get('GITHUB_WEBHOOK_SECRET');
     const signature = headers['x-hub-signature-256'];
 
