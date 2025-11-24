@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'crypto';
 import { Octokit } from '@octokit/rest';
+import { isCodeFile } from 'src/utils';
 
 @Injectable()
 export class GithubWebhookService {
@@ -58,31 +59,35 @@ export class GithubWebhookService {
         const files: FileChange[] = [];
 
         // 处理文件变化
-        commitData.files.forEach((file) => {
-          files.push({
-            filename: file.filename,
-            status: file.status,
-            additions: file.additions,
-            deletions: file.deletions,
-            patch: file.patch,
-          });
+        commitData.files
+          .filter((file) => isCodeFile(file.filename))
+          .forEach((file) => {
+            files.push({
+              filename: file.filename,
+              status: file.status,
+              additions: file.additions,
+              deletions: file.deletions,
+              patch: file.patch,
+            });
 
-          if (file.patch) {
-            diffParts.push(
-              [`文件：${file.filename} (${file.status})`, file.patch, ''].join(
-                '\n',
-              ),
-            );
-          } else {
-            diffParts.push(`文件：${file.filename} (${file.status})`);
-            if (file.status === 'renamed') {
+            if (file.patch) {
               diffParts.push(
-                `重命名：旧文件：${file.previous_filename} -> 新文件：${file.filename}`,
+                [
+                  `文件：${file.filename} (${file.status})`,
+                  file.patch,
+                  '',
+                ].join('\n'),
               );
+            } else {
+              diffParts.push(`文件：${file.filename} (${file.status})`);
+              if (file.status === 'renamed') {
+                diffParts.push(
+                  `重命名：旧文件：${file.previous_filename} -> 新文件：${file.filename}`,
+                );
+              }
+              diffParts.push('');
             }
-            diffParts.push('');
-          }
-        });
+          });
 
         const diff = diffParts.join('\n');
 
