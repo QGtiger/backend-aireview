@@ -2,14 +2,24 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DeepSeekService } from '../ai/deepseek.service';
 import { PromptTemplate } from './prompt.template';
 
+// 行级评论接口
+export interface LineComment {
+  path: string;
+  line: number;
+  comment: string;
+  severity: 'error' | 'warning' | 'info';
+}
+
+// DeepSeek API 返回的 JSON 结构
+interface DeepSeekAnalysisResponse {
+  analysisReport: string; // 改为字符串，包含完整的代码审查结果
+  lineComments: LineComment[];
+}
+
+// 最终返回的分析结果
 export interface AnalysisResult {
-  // 代码复杂度分析
-  complexity: string;
-  // 可行性评估
-  feasibility: string;
-  // 安全性检查
-  security: string;
-  overall: string;
+  analysisReport: string; // 改为字符串
+  lineComments: LineComment[];
   rawResponse: string;
 }
 
@@ -32,25 +42,45 @@ export class AnalysisService {
       commit.files,
     );
 
-    // 调用 DeepSeek API
-    const response = await this.deepSeekService.chat([
-      {
-        role: 'system',
-        content:
-          '你是一位专业的代码审查专家，擅长分析代码的复杂度、可行性和安全性。请用中文回答。',
-      },
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ]);
+    // 调用 DeepSeek API（使用 JSON 输出模式）
+    const response =
+      await this.deepSeekService.chatWithJsonOutput<DeepSeekAnalysisResponse>([
+        {
+          role: 'system',
+          content:
+            '你是一位专业的代码审查专家，擅长分析代码的复杂度、可行性和安全性。请用中文回答，并严格按照 JSON 格式输出结果。',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ]);
 
-    // 解析响应（简单解析，实际可以更复杂）
-    const analysis = this.parseAnalysisResponse(response);
+    // 验证响应结构
+    if (!response.analysisReport || !Array.isArray(response.lineComments)) {
+      this.logger.warn('Invalid response structure from DeepSeek API');
+      throw new Error('Invalid response structure from DeepSeek API');
+    }
+
+    // 验证 lineComments 格式
+    const validatedLineComments = response.lineComments.map((comment) => {
+      if (!['error', 'warning', 'info'].includes(comment.severity)) {
+        this.logger.warn(
+          `Invalid severity: ${comment.severity}, defaulting to 'info'`,
+        );
+        comment.severity = 'info';
+      }
+      return comment;
+    });
 
     this.logger.log(`Analysis completed for commit ${commit.sha}`);
+    this.logger.log(`Found ${validatedLineComments.length} line comments`);
 
-    return analysis;
+    return {
+      analysisReport: response.analysisReport,
+      lineComments: validatedLineComments,
+      rawResponse: JSON.stringify(response, null, 2),
+    };
   }
 
   private buildDiff(commit: CommitInfo): string {
@@ -67,33 +97,5 @@ export class AnalysisService {
         return `文件: ${file.filename} (${file.status})`;
       })
       .join('\n\n');
-  }
-
-  private parseAnalysisResponse(response: string): AnalysisResult {
-    // 简单的解析逻辑，可以根据实际响应格式优化
-    const complexityMatch = response.match(
-      /复杂度分析[：:]\s*([^\n]+(?:\n(?!可行性评估)[^\n]+)*)/i,
-    );
-    const feasibilityMatch = response.match(
-      /可行性评估[：:]\s*([^\n]+(?:\n(?!安全性检查)[^\n]+)*)/i,
-    );
-    const securityMatch = response.match(
-      /安全性检查[：:]\s*([^\n]+(?:\n(?!总体评价)[^\n]+)*)/i,
-    );
-    const overallMatch = response.match(
-      /总体评价[：:]\s*([^\n]+(?:\n[^\n]+)*)/i,
-    );
-
-    return {
-      complexity: complexityMatch
-        ? complexityMatch[1].trim()
-        : '未提供复杂度分析',
-      feasibility: feasibilityMatch
-        ? feasibilityMatch[1].trim()
-        : '未提供可行性评估',
-      security: securityMatch ? securityMatch[1].trim() : '未提供安全性检查',
-      overall: overallMatch ? overallMatch[1].trim() : '未提供总体评价',
-      rawResponse: response,
-    };
   }
 }

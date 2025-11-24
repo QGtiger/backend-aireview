@@ -27,7 +27,7 @@ export class WebhookService {
 
     for (const commit of parsed.commits) {
       const analysicResult = await this.analysisService.analyzeCommit(commit);
-      sendMdMessage('AI 分析', analysicResult.rawResponse);
+      sendMdMessage('AI 分析', analysicResult.analysisReport);
     }
   }
 }

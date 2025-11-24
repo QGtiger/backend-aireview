@@ -102,8 +102,8 @@ export class DeepSeekService {
           messages,
           // 温度
           temperature: 0.7,
-          // 最大 token 数
-          max_tokens: 2000,
+          // 增加 max_tokens 防止 JSON 被截断
+          max_tokens: 4000,
           response_format: { type: 'json_object' },
         },
       );
