@@ -91,4 +91,36 @@ export class DeepSeekService {
       throw new Error(`DeepSeek API call failed: ${error.message}`);
     }
   }
+
+  async chatWithJsonOutput<T>(messages: DeepSeekMessage[]): Promise<T> {
+    try {
+      const response = await this.axiosInstance.post<DeepSeekResponse>(
+        '/v1/chat/completions',
+        {
+          model:
+            this.configService.get<string>('DEEPSEEK_MODEL') || 'deepseek-chat',
+          messages,
+          // 温度
+          temperature: 0.7,
+          // 最大 token 数
+          max_tokens: 2000,
+          response_format: { type: 'json_object' },
+        },
+      );
+
+      const content = response.data.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('Empty response from DeepSeek API');
+      }
+
+      this.logger.log(
+        `DeepSeek API call completed. Tokens used: ${response.data.usage.total_tokens}`,
+      );
+
+      return JSON.parse(content);
+    } catch (error) {
+      this.logger.error('DeepSeek API error:', error);
+      throw error;
+    }
+  }
 }
