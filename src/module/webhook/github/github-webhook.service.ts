@@ -118,7 +118,7 @@ export class GithubWebhookService {
   }) {
     const [owner, repo] = repository.fullName.split('/');
 
-    const c = 22;
+    const dd = 22;
 
     await Promise.all(
       analysisResult.lineComments?.map(async (comment) => {
@@ -129,6 +129,7 @@ export class GithubWebhookService {
           body: `**${comment.severity.toUpperCase()}:** ${comment.comment}`,
           path: comment.path,
           line: comment.line,
+          position: comment.position,
         });
       }),
     );

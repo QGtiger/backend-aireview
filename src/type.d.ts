@@ -72,6 +72,7 @@ interface PushEventPayload {
 interface LineComment {
   path: string;
   line: number;
+  position: number;
   comment: string;
   severity: 'error' | 'warning' | 'info';
 }

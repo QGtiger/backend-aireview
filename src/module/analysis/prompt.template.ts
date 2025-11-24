@@ -49,9 +49,22 @@ ${diff || '无 diff 信息'}
 ### 5. 行级评论
 如果发现代码错误、潜在问题或需要改进的地方，请在 lineComments 数组中添加评论。每个评论需要包含：
 - path: 文件路径
-- line: 行号（从 diff 中提取）
+- line: 文件中的行号（用于显示）
+- position: **diff 中的位置索引**（重要！这是 diff 中该行的位置，从 1 开始计数。需要根据 diff 内容计算，只计算实际代码行，不包括 diff 头部信息如 "---"、"+++"、行号标记等）
 - comment: 具体的评论内容
 - severity: 严重程度（"error" | "warning" | "info"）
+
+**position 计算说明：**
+- position 是 diff 中实际代码行的位置索引
+- 从 diff 的第一行代码开始计数（不包括文件头、行号标记等）
+- 例如：如果 diff 是：
+  \`\`\`
+  @@ -10,5 +10,6 @@
+   line1
+   line2
+  +new line
+  \`\`\`
+  那么 "new line" 的 position 应该是 3（第 3 行实际代码）
 
 ## analysisReport 输出格式要求
 
@@ -96,6 +109,7 @@ ${diff || '无 diff 信息'}
     {
       "path": "src/example.ts",
       "line": 42,
+      "position": 15,
       "comment": "这里可能存在空指针异常，建议添加空值检查",
       "severity": "warning"
     }
