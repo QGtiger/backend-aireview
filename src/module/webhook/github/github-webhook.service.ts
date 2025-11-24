@@ -120,9 +120,9 @@ export class GithubWebhookService {
 
     const dd = 22;
 
-    await Promise.all(
+    const lineComments = await Promise.all(
       analysisResult.lineComments?.map(async (comment) => {
-        await this.octokit.repos.createCommitComment({
+        const response = await this.octokit.repos.createCommitComment({
           owner,
           repo,
           commit_sha: commit.sha,
@@ -131,6 +131,7 @@ export class GithubWebhookService {
           line: comment.line,
           position: comment.position,
         });
+        return response.data;
       }),
     );
 
@@ -140,6 +141,9 @@ export class GithubWebhookService {
       commit_sha: commit.sha,
       body: analysisResult.analysisReport,
     });
-    return response.data;
+    return {
+      commitComment: response.data,
+      lineComments,
+    };
   }
 }

@@ -52,11 +52,21 @@ export class AnalysisService {
       return comment;
     });
 
+    // 在报告开头添加 commit 信息链接
+    const commitLink = `[🔗 查看完整提交](${commit.url})`;
+    const commitInfo = `## 📝 提交信息\n\n| 项目 | 内容 |\n|------|------|\n| 提交信息 | ${
+      commit.message
+    } |\n| 提交 SHA | \`${commit.sha.substring(
+      0,
+      7,
+    )}\` |\n| 链接 | ${commitLink} |\n\n---\n\n`;
+    const analysisReportWithLink = commitInfo + response.analysisReport;
+
     this.logger.log(`Analysis completed for commit ${commit.sha}`);
     this.logger.log(`Found ${validatedLineComments.length} line comments`);
 
     return {
-      analysisReport: response.analysisReport,
+      analysisReport: analysisReportWithLink,
       lineComments: validatedLineComments,
       rawResponse: JSON.stringify(response, null, 2),
     };

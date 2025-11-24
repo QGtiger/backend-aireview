@@ -27,13 +27,23 @@ export class WebhookService {
 
     for (const commit of parsed.commits) {
       const analysicResult = await this.analysisService.analyzeCommit(commit);
-      sendMdMessage('AI 分析', analysicResult.analysisReport);
 
-      await this.githubWebhookService.postComment({
+      const { lineComments } = await this.githubWebhookService.postComment({
         repository: parsed.repository,
         commit,
         analysisResult: analysicResult,
       });
+
+      const lineCommentsContent = lineComments.reduce((acc, comment) => {
+        return (
+          acc + `[${comment.path}:${comment.line}](${comment.html_url})` + '\n'
+        );
+      }, '');
+
+      sendMdMessage(
+        'AI 分析',
+        lineCommentsContent + analysicResult.analysisReport,
+      );
     }
   }
 }
