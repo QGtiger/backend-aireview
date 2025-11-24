@@ -1,4 +1,4 @@
-const resportUrls =
+const resportUrl =
   'https://open.feishu.cn/open-apis/bot/v2/hook/cb513eed-cdc7-4afd-ba2b-fb788bf2ac07';
 
 const getMessageData = (
@@ -36,7 +36,7 @@ const getMessageData = (
 };
 
 export async function sendMdMessage(title: string, message: string) {
-  await fetch(resportUrls, {
+  await fetch(resportUrl, {
     method: 'POST',
     body: JSON.stringify({
       msg_type: 'interactive',
@@ -67,7 +67,7 @@ export async function sendMdMessage(title: string, message: string) {
 }
 
 export async function sendMessage(message: string) {
-  await fetch(resportUrls, {
+  await fetch(resportUrl, {
     method: 'POST',
     body: JSON.stringify(
       getMessageData([
