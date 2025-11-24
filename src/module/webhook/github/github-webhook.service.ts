@@ -123,8 +123,6 @@ export class GithubWebhookService {
   }) {
     const [owner, repo] = repository.fullName.split('/');
 
-    const dd = 22;
-
     const lineComments = await Promise.all(
       analysisResult.lineComments?.map(async (comment) => {
         const response = await this.octokit.repos.createCommitComment({
