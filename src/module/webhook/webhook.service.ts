@@ -40,7 +40,7 @@ export class WebhookService {
         );
       }, '');
 
-      sendMdMessage(
+      await sendMdMessage(
         'AI 分析',
         lineCommentsContent + analysicResult.analysisReport,
       );
