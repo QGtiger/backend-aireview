@@ -65,20 +65,3 @@ export async function sendMdMessage(title: string, message: string) {
     },
   });
 }
-
-export async function sendMessage(message: string) {
-  await fetch(resportUrl, {
-    method: 'POST',
-    body: JSON.stringify(
-      getMessageData([
-        {
-          title: 'AI Review',
-          content: message,
-        },
-      ]),
-    ),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-}
