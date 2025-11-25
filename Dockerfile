@@ -12,7 +12,7 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 
 # 安装依赖
-RUN pnpm install --frozen-lockfile
+RUN pnpm config set registry https://registry.npmmirror.com && pnpm install --frozen-lockfile
 
 # 复制源代码
 COPY . .
@@ -33,7 +33,7 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 
 # 只安装生产依赖
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm config set registry https://registry.npmmirror.com && pnpm install --prod --frozen-lockfile
 
 # 从构建阶段复制编译后的文件
 COPY --from=builder /app/dist ./dist
