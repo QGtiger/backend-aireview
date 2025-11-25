@@ -7,14 +7,13 @@ import {
 } from '@nestjs/common';
 import { GithubWebhookService } from './github-webhook.service';
 import { ConfigService } from '@nestjs/config';
-import { WebhookService } from '../webhook.service';
+import { sendMdMessage } from '../../../utils/message';
 
 @Controller('webhook/github')
 export class GithubWebhookController {
   constructor(
     private readonly githubWebhookService: GithubWebhookService,
     private readonly configService: ConfigService,
-    private readonly webhookService: WebhookService,
   ) {}
 
   @Post()
@@ -37,7 +36,32 @@ export class GithubWebhookController {
     console.log(event);
 
     if (event === 'push') {
-      await this.webhookService.handlePushEvent(body, 'github');
+      const parsed = await this.githubWebhookService.parsePushEvent(body);
+
+      for (const commit of parsed.commits) {
+        const analysicResult = await this.githubWebhookService.analyzeCommit(
+          commit,
+        );
+
+        const { lineComments } = await this.githubWebhookService.postComment({
+          repository: parsed.repository,
+          commit,
+          analysisResult: analysicResult,
+        });
+
+        const lineCommentsContent = lineComments.reduce((acc, comment) => {
+          return (
+            acc +
+            `[${comment.path}:${comment.line}](${comment.html_url})` +
+            '\n'
+          );
+        }, '');
+
+        await sendMdMessage(
+          'AI 分析',
+          lineCommentsContent + analysicResult.analysisReport,
+        );
+      }
     }
   }
 }

@@ -1,10 +1,10 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { GithubWebhookController } from './github-webhook.controller';
 import { GithubWebhookService } from './github-webhook.service';
-import { WebhookModule } from '../webhook.module';
+import { AnalysisModule } from '../../analysis/analysis.module';
 
 @Module({
-  imports: [forwardRef(() => WebhookModule)],
+  imports: [AnalysisModule],
   controllers: [GithubWebhookController],
   providers: [GithubWebhookService],
   exports: [GithubWebhookService],

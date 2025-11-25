@@ -3,13 +3,18 @@ import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'crypto';
 import { Octokit } from '@octokit/rest';
 import { isCodeFile } from '../../../utils';
+import { PromptTemplate } from './prompt.template';
+import { AnalysisService } from '@/module/analysis/analysis.service';
 
 @Injectable()
 export class GithubWebhookService {
   private readonly logger = new Logger(GithubWebhookService.name);
   private readonly octokit: Octokit;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly analysisService: AnalysisService,
+  ) {
     const githubToken = this.configService.get('GITHUB_TOKEN');
     if (!githubToken) {
       this.logger.error('GITHUB_TOKEN is not set');
@@ -31,6 +36,17 @@ export class GithubWebhookService {
     const hmac = createHmac('sha256', secret);
     const digest = 'sha256=' + hmac.update(payload).digest('hex');
     return signature === digest;
+  }
+
+  async analyzeCommit(commit: CommitInfo) {
+    // 生成 prompt
+    const prompt = PromptTemplate.generateAnalysisPrompt(
+      commit.message,
+      commit.diff,
+      commit.files,
+    );
+
+    return this.analysisService.analyzeCommit(commit, prompt);
   }
 
   async parsePushEvent(payload: PushEventPayload) {
@@ -105,10 +121,6 @@ export class GithubWebhookService {
     return {
       repository,
       commits,
-      ref: payload.ref,
-      before: payload.before,
-      after: payload.after,
-      pusher: payload.pusher,
     };
   }
 

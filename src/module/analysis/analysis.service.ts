@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DeepSeekService } from '../ai/deepseek.service';
-import { PromptTemplate } from './prompt.template';
 
 @Injectable()
 export class AnalysisService {
@@ -8,18 +7,11 @@ export class AnalysisService {
 
   constructor(private readonly deepSeekService: DeepSeekService) {}
 
-  async analyzeCommit(commit: CommitInfo): Promise<AnalysisResult> {
+  async analyzeCommit(
+    commit: CommitInfo,
+    promptTemplate: string,
+  ): Promise<AnalysisResult> {
     this.logger.log(`Analyzing commit ${commit.sha}`);
-
-    // 构建 diff 内容
-    const diff = this.buildDiff(commit);
-
-    // 生成 prompt
-    const prompt = PromptTemplate.generateAnalysisPrompt(
-      commit.message,
-      diff,
-      commit.files,
-    );
 
     // 调用 DeepSeek API（使用 JSON 输出模式）
     const response =
@@ -31,7 +23,7 @@ export class AnalysisService {
         },
         {
           role: 'user',
-          content: prompt,
+          content: promptTemplate,
         },
       ]);
 
@@ -54,12 +46,7 @@ export class AnalysisService {
 
     // 在报告开头添加 commit 信息链接
     const commitLink = `[🔗 查看完整提交](${commit.url})`;
-    const commitInfo = `## 📝 提交信息\n\n| 项目 | 内容 |\n|------|------|\n| 提交信息 | ${
-      commit.message
-    } |\n| 提交 SHA | \`${commit.sha.substring(
-      0,
-      7,
-    )}\` |\n| 链接 | ${commitLink} |\n\n---\n\n`;
+    const commitInfo = `## 📝 提交信息\n\n| 项目 | 内容 |\n|------|------|\n| 提交信息 | ${commit.message} |\n| 提交 SHA | \`${commit.sha}\` |\n| 链接 | ${commitLink} |\n\n---\n\n`;
     const analysisReportWithLink = commitInfo + response.analysisReport;
 
     this.logger.log(`Analysis completed for commit ${commit.sha}`);
@@ -70,21 +57,5 @@ export class AnalysisService {
       lineComments: validatedLineComments,
       rawResponse: JSON.stringify(response, null, 2),
     };
-  }
-
-  private buildDiff(commit: CommitInfo): string {
-    if (commit.diff) {
-      return commit.diff;
-    }
-
-    // 如果没有 diff，从文件变更中构建
-    return commit.files
-      .map((file) => {
-        if (file.patch) {
-          return `文件: ${file.filename}\n${file.patch}`;
-        }
-        return `文件: ${file.filename} (${file.status})`;
-      })
-      .join('\n\n');
   }
 }
