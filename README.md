@@ -170,30 +170,95 @@ pnpm run lint
 
 ### Docker 部署
 
-创建 `Dockerfile`：
+#### 方式一：使用 Docker Compose（推荐）
 
-```dockerfile
-FROM node:18-alpine
+1. **准备环境变量文件**
 
-WORKDIR /app
+   复制 `.env.example` 为 `.env` 并填写配置：
 
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+   ```bash
+   cp .env.example .env
+   ```
 
-COPY . .
-RUN pnpm run build
+   编辑 `.env` 文件，至少需要配置 `DEEPSEEK_API_KEY`（必需）。
 
-EXPOSE 3000
+2. **启动服务**
 
-CMD ["pnpm", "run", "start:prod"]
-```
+   ```bash
+   docker-compose up -d
+   ```
 
-构建和运行：
+3. **查看日志**
 
-```bash
-docker build -t ai-review-system .
-docker run -p 3000:3000 --env-file .env ai-review-system
-```
+   ```bash
+   docker-compose logs -f
+   ```
+
+4. **停止服务**
+
+   ```bash
+   docker-compose down
+   ```
+
+#### 方式二：使用 Docker 命令
+
+1. **构建镜像**
+
+   ```bash
+   docker build -t backend-aireview:latest .
+   ```
+
+2. **运行容器**
+
+   ```bash
+   docker run -d \
+     --name backend-aireview \
+     -p 3000:3000 \
+     --env-file .env \
+     --restart unless-stopped \
+     backend-aireview:latest
+   ```
+
+3. **查看日志**
+
+   ```bash
+   docker logs -f backend-aireview
+   ```
+
+4. **停止容器**
+
+   ```bash
+   docker stop backend-aireview
+   docker rm backend-aireview
+   ```
+
+#### Docker 镜像特点
+
+- ✅ 使用多阶段构建，减小镜像体积
+- ✅ 基于 Alpine Linux，镜像更小
+- ✅ 使用非 root 用户运行，提高安全性
+- ✅ 支持健康检查（需要应用提供健康检查端点）
+- ✅ 自动重启策略
+
+#### 环境变量说明
+
+所有环境变量都可以通过以下方式配置：
+
+1. **使用 `.env` 文件**（推荐）
+   ```bash
+   docker-compose up --env-file .env
+   ```
+
+2. **直接在命令行指定**
+   ```bash
+   docker run -e DEEPSEEK_API_KEY=your_key backend-aireview:latest
+   ```
+
+3. **在 docker-compose.yml 中配置**
+   ```yaml
+   environment:
+     - DEEPSEEK_API_KEY=your_key
+   ```
 
 ### 使用 PM2
 

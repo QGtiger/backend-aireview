@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  backend-aireview:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend-aireview
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      # 服务配置
+      - NODE_ENV=production
+      - PORT=${PORT:-3000}
+      
+      # DeepSeek API 配置（必需）
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      - DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-deepseek-chat}
+      
+      # GitHub 配置（可选）
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
+      
+      # GitLab 配置（可选）
+      - GITLAB_TOKEN=${GITLAB_TOKEN:-}
+      - GITLAB_WEBHOOK_TOKEN=${GITLAB_WEBHOOK_TOKEN:-}
+      - GITLAB_BASE_URL=${GITLAB_BASE_URL:-https://gitlab.com/api/v4}
+    env_file:
+      - .env
+    networks:
+      - aireview-network
+    # 健康检查（如果应用提供了 /health 端点，可以取消注释）
+    # 注意：需要先安装 wget 或使用 curl
+    # healthcheck:
+    #   test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health || exit 1"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s
+
+networks:
+  aireview-network:
+    driver: bridge
+
