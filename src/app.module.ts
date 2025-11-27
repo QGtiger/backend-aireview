@@ -6,6 +6,7 @@ import { WebhookModule } from './module/webhook/webhook.module';
 import { ConfigModule } from '@nestjs/config';
 import { existsSync } from 'fs';
 import { validate } from './config/config.validation';
+import { AppController } from './app.controller';
 
 const getEnvFiles = () => {
   const env = process.env.NODE_ENV || 'development';
@@ -22,7 +23,7 @@ const getEnvFiles = () => {
     }),
     WebhookModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_FILTER,

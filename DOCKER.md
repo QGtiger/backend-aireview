@@ -196,26 +196,230 @@ volumes:
 
 ## 网络配置
 
-### Docker Compose
+### 网络配置说明
 
-默认会创建一个名为 `aireview-network` 的桥接网络。如果需要连接到其他服务，可以修改网络配置：
+在 `docker-compose.yml` 中的网络配置：
 
 ```yaml
 networks:
   aireview-network:
-    external: true # 使用外部网络
-    name: my-network
+    driver: bridge
 ```
 
-### Docker 命令
+**含义解释：**
+
+- `networks:`: 定义 Docker Compose 使用的网络
+- `aireview-network`: 网络名称，用于标识这个网络
+- `driver: bridge`: 网络驱动类型，`bridge` 是默认的桥接网络
+  - **Bridge 网络**：容器之间可以通过服务名或容器名进行通信
+  - 同一网络内的容器可以互相访问，但不会暴露到主机网络
+  - 适合同一 Docker Compose 文件中的多个服务通信
+
+### 两个容器之间通信
+
+#### 方法 1: 使用 Docker Compose（推荐）
+
+在同一个 `docker-compose.yml` 文件中定义多个服务，它们会自动加入同一个网络：
+
+```yaml
+version: '3.8'
+
+services:
+  backend-aireview:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend-aireview
+    networks:
+      - aireview-network
+    # ... 其他配置
+
+  # 第二个服务示例：数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: aireview
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    networks:
+      - aireview-network
+    # ... 其他配置
+
+  # 第三个服务示例：Redis
+  redis:
+    image: redis:7-alpine
+    container_name: redis-cache
+    networks:
+      - aireview-network
+    # ... 其他配置
+
+networks:
+  aireview-network:
+    driver: bridge
+```
+
+**通信方式：**
+
+在同一网络中的容器可以通过以下方式通信：
+
+1. **使用服务名**（推荐）：
+
+   ```javascript
+   // 在 backend-aireview 中访问 postgres
+   const dbUrl = 'postgresql://postgres:password@postgres:5432/aireview';
+
+   // 在 backend-aireview 中访问 redis
+   const redisUrl = 'redis://redis:6379';
+   ```
+
+2. **使用容器名**：
+   ```javascript
+   // 使用容器名也可以
+   const dbUrl = 'postgresql://postgres:password@postgres-db:5432/aireview';
+   ```
+
+**重要提示：**
+
+- 使用**服务名**（如 `postgres`、`redis`）作为主机名，而不是 `localhost`
+- 端口使用容器内部的端口，不需要映射到主机
+- 服务名会自动解析为容器 IP 地址
+
+#### 方法 2: 使用 Docker 命令手动创建网络
 
 ```bash
-# 创建网络
-docker network create aireview-network
+# 1. 创建网络
+docker network create my-network
 
-# 运行容器并加入网络
-docker run --network aireview-network backend-aireview:latest
+# 2. 运行第一个容器并加入网络
+docker run -d \
+  --name container1 \
+  --network my-network \
+  your-image:latest
+
+# 3. 运行第二个容器并加入同一网络
+docker run -d \
+  --name container2 \
+  --network my-network \
+  your-image:latest
+
+# 4. 容器之间可以通过容器名通信
+# 在 container1 中访问 container2：
+# http://container2:port
 ```
+
+#### 方法 3: 使用外部网络
+
+如果容器不在同一个 `docker-compose.yml` 中，可以使用外部网络：
+
+**步骤 1：创建外部网络**
+
+```bash
+docker network create shared-network
+```
+
+**步骤 2：在第一个 docker-compose.yml 中使用外部网络**
+
+```yaml
+services:
+  service1:
+    # ... 配置
+    networks:
+      - shared-network
+
+networks:
+  shared-network:
+    external: true
+    name: shared-network
+```
+
+**步骤 3：在第二个 docker-compose.yml 中使用相同的外部网络**
+
+```yaml
+services:
+  service2:
+    # ... 配置
+    networks:
+      - shared-network
+
+networks:
+  shared-network:
+    external: true
+    name: shared-network
+```
+
+### 实际示例：后端服务连接数据库
+
+假设你有一个后端服务和一个 PostgreSQL 数据库：
+
+```yaml
+version: '3.8'
+
+services:
+  backend-aireview:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend-aireview
+    environment:
+      # 使用服务名 'postgres' 作为数据库主机
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/aireview
+    networks:
+      - aireview-network
+    depends_on:
+      - postgres # 确保 postgres 先启动
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: aireview
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    networks:
+      - aireview-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+networks:
+  aireview-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+```
+
+在代码中，使用环境变量中的 `DATABASE_URL`，它会自动解析 `postgres` 服务名为正确的容器 IP。
+
+### 验证容器网络连接
+
+```bash
+# 查看网络信息
+docker network inspect aireview-network
+
+# 在容器中测试连接（例如测试是否能连接到 postgres）
+docker exec backend-aireview ping postgres
+
+# 查看容器网络配置
+docker inspect backend-aireview | grep -A 20 Networks
+```
+
+### 常见问题
+
+**Q: 为什么容器之间无法通信？**
+
+- 检查是否在同一个网络中
+- 确认使用服务名而不是 `localhost`
+- 检查防火墙设置
+
+**Q: 如何让容器访问主机服务？**
+
+- 使用 `host.docker.internal`（Docker Desktop）或 `172.17.0.1`（Linux）
+- 例如：`http://host.docker.internal:8080`
+
+**Q: 如何让主机访问容器？**
+
+- 使用 `ports` 映射端口到主机
 
 ## 故障排查
 
