@@ -176,7 +176,7 @@ docker images backend-aireview
 
 ```yaml
 ports:
-  - "8080:3000"  # 将容器的 3000 端口映射到主机的 8080 端口
+  - '8080:3000' # 将容器的 3000 端口映射到主机的 8080 端口
 ```
 
 ### Docker 命令
@@ -203,7 +203,7 @@ volumes:
 ```yaml
 networks:
   aireview-network:
-    external: true  # 使用外部网络
+    external: true # 使用外部网络
     name: my-network
 ```
 
@@ -219,14 +219,65 @@ docker run --network aireview-network backend-aireview:latest
 
 ## 故障排查
 
-### 查看容器日志
+### 实时查看容器日志
+
+#### Docker Compose 方式
 
 ```bash
-# Docker Compose
+# 实时查看所有服务的日志（跟随模式）
+docker-compose logs -f
+
+# 实时查看指定服务的日志
 docker-compose logs -f backend-aireview
 
-# Docker
+# 查看最近 100 行日志并实时跟随
+docker-compose logs -f --tail=100 backend-aireview
+
+# 查看指定时间之后的日志
+docker-compose logs -f --since 10m backend-aireview
+```
+
+#### Docker 命令方式
+
+```bash
+# 实时查看容器日志（跟随模式，类似 tail -f）
 docker logs -f backend-aireview
+
+# 查看最近 100 行日志并实时跟随
+docker logs -f --tail=100 backend-aireview
+
+# 查看指定时间之后的日志（例如：10分钟前到现在）
+docker logs -f --since 10m backend-aireview
+
+# 查看指定时间段的日志
+docker logs --since "2024-01-01T00:00:00" --until "2024-01-01T12:00:00" backend-aireview
+
+# 查看所有日志（不跟随）
+docker logs backend-aireview
+
+# 查看最后 50 行日志（不跟随）
+docker logs --tail=50 backend-aireview
+```
+
+#### 常用参数说明
+
+- `-f` 或 `--follow`: 实时跟踪日志输出（类似 `tail -f`）
+- `--tail=N`: 只显示最后 N 行日志
+- `--since`: 显示指定时间之后的日志（例如：`10m`, `1h`, `2024-01-01T00:00:00`）
+- `--until`: 显示指定时间之前的日志
+- `-t` 或 `--timestamps`: 显示时间戳
+
+#### 示例
+
+```bash
+# 实时查看并显示时间戳
+docker logs -f -t backend-aireview
+
+# 查看最近 200 行日志，带时间戳，并实时跟随
+docker logs -f -t --tail=200 backend-aireview
+
+# 查看最近 1 小时的日志
+docker logs --since 1h backend-aireview
 ```
 
 ### 进入容器调试
@@ -326,4 +377,3 @@ docker-compose up -d --build
 - [Docker 官方文档](https://docs.docker.com/)
 - [Docker Compose 文档](https://docs.docker.com/compose/)
 - [NestJS 部署文档](https://docs.nestjs.com/)
-
